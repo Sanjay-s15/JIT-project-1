@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from 'next/navigation';
 import axios from "axios";
 
@@ -13,6 +13,7 @@ export default function Home() {
     email: "",
     department: "",
     boardingpoint: "",
+    category: "",
     feesdetails: "",
     feesamount: "",
   });
@@ -47,6 +48,7 @@ export default function Home() {
         email: "",
         department: "",
         boardingpoint: "",
+        category: "",
         feesdetails: "",
         feesamount: "",
       });
@@ -62,11 +64,59 @@ export default function Home() {
     setErrors(newErrors);
     if (Object.keys(newErrors).length === 0) {
       alert("Form submitted!");
-      router.push(
-  `/confirmation?name=${form.name}&rollNumber=${form.rollNo}&gender=${form.gender}&mailId=${form.email}&department=${form.department}&boardingPoint=${form.boardingpoint}&feesDetails=${form.feesdetails}&feesAmount=${form.feesamount}`
-);
+     
     }
   }
+
+  function handleNext() {
+    // TODO: Implement your next step logic here
+    alert("Proceeding to the next step!");
+    router.push(
+      `/confirmation?name=${form.name}&rollNumber=${form.rollNo}&gender=${form.gender}&mailId=${form.email}&department=${form.department}&boardingPoint=${form.boardingpoint}&category=${form.category}&feesdetails=${form.feesdetails}&feesamount=${form.feesamount}`
+    );
+  }
+
+  const feeMapping: { [key: string]: number } = {
+    "IT|Fully Paid|Government Quota Dayscholar": 160000,
+    "CSE|Fully Paid|Government Quota Dayscholar": 160000,
+    "AIDS|Fully Paid|Government Quota Dayscholar": 155000,
+    "CSBS|Fully Paid|Government Quota Dayscholar": 155000,
+    "ECE|Fully Paid|Government Quota Dayscholar": 160000,
+    "Mech|Fully Paid|Government Quota Dayscholar": 155000,
+    "IT|Fully Paid|Government Quota Hostel": 220000,
+    "CSE|Fully Paid|Government Quota Hostel": 220000,
+    "AIDS|Fully Paid|Government Quota Hostel": 215000,
+    "CSBS|Fully Paid|Government Quota Hostel": 215000,
+    "ECE|Fully Paid|Government Quota Hostel": 220000,
+    "Mech|Fully Paid|Government Quota Hostel": 215000,
+    "IT|Fully Paid|Management Quota Dayscholar": 195000,
+    "CSE|Fully Paid|Management Quota Dayscholar": 195000,
+    "AIDS|Fully Paid|Management Quota Dayscholar": 190000,
+    "CSBS|Fully Paid|Management Quota Dayscholar": 190000,
+    "ECE|Fully Paid|Management Quota Dayscholar": 195000,
+    "Mech|Fully Paid|Management Quota Dayscholar": 190000,
+    "IT|Fully Paid|Management Quota Hostel": 285000,
+    "CSE|Fully Paid|Management Quota Hostel": 285000,
+    "AIDS|Fully Paid|Management Quota Hostel": 280000,
+    "CSBS|Fully Paid|Management Quota Hostel":280000,
+    "ECE|Fully Paid|Management Quota Hostel": 285000,
+    "Mech|Fully Paid|Management Quota Hostel": 280000,
+  };
+
+  useEffect(() => {
+    if (
+      form.category !== "Others" &&
+      form.feesdetails !== "Partially Paid"
+    ) {
+      const key = `${form.department}|${form.feesdetails}|${form.category}`;
+      if (feeMapping[key]) {
+        setForm((prev) => ({ ...prev, feesamount: feeMapping[key].toString() }));
+      } else {
+        setForm((prev) => ({ ...prev, feesamount: "" }));
+      }
+    }
+    // If "Others" or "Partially Paid", do not auto-fill
+  }, [form.department, form.feesdetails, form.category]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -83,7 +133,7 @@ export default function Home() {
               name="roll"
               value={form.rollNo}
               onChange={(e) =>
-    setForm({ ...form, rollNo: e.target.value })}
+             setForm({ ...form, rollNo: e.target.value })}
               placeholder="Enter Roll Number"
             />
             {errors.rollNo && <span className="text-xs text-red-500">{errors.rollNo}</span>}
@@ -158,6 +208,23 @@ export default function Home() {
             {errors.boardingpoint && <span className="text-xs text-red-500">{errors.boardingpoint}</span>}
           </div>
           <div>
+            <label className="block text-sm font-medium mb-1">Category*</label>
+            <select
+              className={`w-full border rounded px-3 py-2 focus:outline-indigo-400 ${errors.category && "border-red-400"}`}
+              name="category"
+              value={form.category}
+              onChange={handleChange}
+            >
+              <option value="">Select</option>
+              <option value="Management Quota Dayscholar">Management Quota Dayscholar</option>
+              <option value="Management Quota Hostel">Management Quota Hostel</option>
+              <option value="Government Quota Dayscholar">Government Quota Dayscholar</option>
+              <option value="Government Quota Hostel">Government Quota Hostel</option>
+              <option value="Others">Others</option>
+              </select>
+            {errors.category && <span className="text-xs text-red-500">{errors.category}</span>}
+          </div>
+          <div>
             <label className="block text-sm font-medium mb-1">Fees Details*</label>
             <select
               className={`w-full border rounded px-3 py-2 focus:outline-indigo-400 ${errors.feesdetails && "border-red-400"}`}
@@ -180,16 +247,28 @@ export default function Home() {
               value={form.feesamount}
               onChange={handleChange}
               placeholder="Enter Fees Amount"
+              readOnly={form.category !== "Others" && form.feesdetails !== "Partially Paid"}
             />
             {errors.feesamount && <span className="text-xs text-red-500">{errors.feesamount}</span>}
           </div>
         </div>
-        <button
-          type="submit"
-          className="mt-8 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 rounded-lg shadow transition"
-        >
-          Submit
-        </button>
+        {form.feesdetails === "Fully Paid" ? (
+  <button
+    type="button"
+    className="mt-8 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 rounded-lg shadow transition"
+    onClick={handleNext} // You need to implement handleNext for the next step
+  >
+    Next
+  </button>
+) : (
+  <button
+    type="submit"
+    className="mt-8 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 rounded-lg shadow transition"
+    onClick={handleSubmit}
+  >
+    Submit
+  </button>
+)}
       </form>
     </div>
   );
